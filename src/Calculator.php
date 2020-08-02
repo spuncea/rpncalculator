@@ -52,34 +52,48 @@ class Calculator extends AbstractCalculator {
 
         while (FALSE !== ($input = fgets(STDIN))) {
             
-            $values = explode(' ', trim($input));
-            
-            // set the flag when not inline (single input)
-            if(count($values) == 1) {
-                $first = reset($values);
-                if(Validate::regexp($first, Regexp::FRACTIONAL_NUMBER) || in_array($first, static::$allowedOperators)) {
-                    static::$inline = false;
-                }
-            }
-
-            // set the flag when inline (multiple input)
-            if (count($values) > 1) {
-                static::$inline = true;
-            }
-
-            foreach($values as $value) {
-                if(empty($value)) {
-                    // nothing to do with empty values
-                    continue;
-                }
-                $this->handleSingle($value);
-            }
-
-            // print the result when inline calculation 
-            if(static::$inline) {
-                echo end(static::$stack) . PHP_EOL;
+            $result = $this->calculate($input);
+            if(!is_null($result)) {
+                echo $result . PHP_EOL;
             }
         }
+    }
+
+    /**
+     * Calculate a string with of numbers and operators separated by space
+     * @param string $string The given input string ex: 26 6 2 12 - - +  
+     */
+    public function calculate($string)
+    {
+        $values = explode(' ', trim($string));
+
+        // set the flag when not inline (single input)
+        if (count($values) == 1) {
+            $first = reset($values);
+            if (Validate::regexp($first, Regexp::FRACTIONAL_NUMBER) || in_array($first, static::$allowedOperators)) {
+                static::$inline = false;
+            }
+        }
+
+        // set the flag when inline (multiple input)
+        if (count($values) > 1) {
+            static::$inline = true;
+        }
+
+        foreach ($values as $value) {
+            if (empty($value)) {
+                // nothing to do with empty values
+                continue;
+            }
+            $result = $this->handleSingle($value);
+        }
+
+        // print the result when inline calculation 
+        if (static::$inline) {
+            $result = end(static::$stack);
+        }
+
+        return $result;
     }
 
     /**
@@ -90,6 +104,10 @@ class Calculator extends AbstractCalculator {
      */
     private function handleSingle($value)
     {
+        if($value == 'q') { exit(1); };
+        
+        $result = null;
+
         // fractional number - add the number to the stack
         if(Validate::regexp($value, Regexp::FRACTIONAL_NUMBER)) {
 
@@ -103,7 +121,7 @@ class Calculator extends AbstractCalculator {
 
             // print the number only when the input is done one by one
             if(!static::$inline) {
-                echo '> ' . $value . PHP_EOL;
+                $result = $value;
             }
 
             static::$stack[] = $value;
@@ -112,7 +130,8 @@ class Calculator extends AbstractCalculator {
         else if(in_array($value, static::$allowedOperators)) {
             
             if(count(static::$stack) < 2) {
-                echo sprintf('Not enough numbers in stack. Add '. (2 - count(static::$stack)) . ' more number(s) ' . PHP_EOL);
+                $numbers = (2 - count(static::$stack));
+                echo sprintf('Not enough numbers in stack. Add %s more number(s)' . PHP_EOL, $numbers);
                 return;
             }
             // last element in stack
@@ -145,9 +164,6 @@ class Calculator extends AbstractCalculator {
                 $result = number_format($result, 1);
             }
 
-            if (!static::$inline) {
-                echo $result . PHP_EOL;
-            }
             static::$stack[] = $result;
         }
         // not valid input
@@ -155,6 +171,6 @@ class Calculator extends AbstractCalculator {
             echo sprintf('The value given ("%s") is invalid' . PHP_EOL, $value) ;
         }
 
+        return $result;
     }
-
 }
