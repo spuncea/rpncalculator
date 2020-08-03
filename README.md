@@ -12,8 +12,9 @@ Examples
 
 Installation
 -----------------
-composer install 
-php index.php 
+  composer install 
+  
+  php index.php 
 
 Tests
 -----------------
